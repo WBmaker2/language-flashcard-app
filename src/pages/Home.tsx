@@ -29,6 +29,26 @@ export default function Home() {
   return (
     <div>
       <h1 style={{ position:'absolute', width:1, height:1, overflow:'hidden', clip:'rect(0,0,0,0)' }}>언어 학습 플래시카드</h1>
+      <section className="card" style={{ marginBottom: 16 }}>
+        <h2 style={{ marginTop: 0 }}>언어 학습 플래시카드</h2>
+        <p>인터넷 없이도 동작하는 다국어 플래시카드 앱입니다. 간격 반복(SRS)으로 복습 시점을 자동 계산하고, Web Speech API로 발음을 들려줍니다.</p>
+        <h3>이 앱은 이런 프로그램입니다</h3>
+        <ul>
+          <li>덱(단어장) 단위로 카드를 관리합니다.</li>
+          <li>앞/뒤 뒤집기와 Again/Hard/Good/Easy 평가로 SRS 복습을 진행합니다.</li>
+          <li>오프라인 PWA로 설치해 모바일/데스크톱에서 사용할 수 있습니다.</li>
+        </ul>
+        <h3>사용 방법</h3>
+        <ol>
+          <li>「+ 새 덱」으로 단어장을 만들고 언어를 선택합니다.</li>
+          <li>덱 화면에서 앞(질문)/뒤(답) 카드를 추가합니다. (입력형/객관식/클로즈 지원)</li>
+          <li>「학습」을 눌러 오늘 복습할 카드를 SRS로 학습합니다.</li>
+          <li>카드를 뒤집고 평가 버튼으로 숙련도를 기록합니다.</li>
+          <li>통계 화면에서 학습량과 연속일을 확인합니다.</li>
+        </ol>
+        <h3>주요 기능</h3>
+        <p className="small">CSV/JSON 가져오기·내보내기, 백업/복원, 이미지 첨부, 덱 공유(QR), 테마/언어 설정, 키보드 단축키.</p>
+      </section>
       <div className="row" style={{ justifyContent: 'space-between', marginBottom: 12 }}>
         <h2>덱 목록</h2>
         <button className="btn" onClick={() => setOpen(true)}>+ 새 덱</button>
