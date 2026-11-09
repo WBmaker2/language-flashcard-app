@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom'
+import { HashRouter, Routes, Route, NavLink } from 'react-router-dom'
 import { useApp } from './store/appStore'
 import Home from './pages/Home'
 import DeckPage from './pages/DeckPage'
@@ -21,7 +21,7 @@ export default function App() {
     </div>
   )
   return (
-    <BrowserRouter>
+    <HashRouter>
       <div className="app">
         <Nav />
         <main id="main">
@@ -34,7 +34,7 @@ export default function App() {
           </Routes>
         </main>
       </div>
-    </BrowserRouter>
+    </HashRouter>
   )
 }
 
