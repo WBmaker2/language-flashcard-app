@@ -50,49 +50,63 @@ export default function Stats() {
     return s
   }, [reviews])
 
-  const COLORS = ['#38bdf8', '#f59e0b', '#22c55e']
+  const COLORS = ['var(--accent)', 'var(--hard)', 'var(--good)']
+
+  if (cards.length === 0) {
+    return (
+      <div className="empty card">
+        <h2>통계가 없습니다</h2>
+        <p className="small">카드를 추가하고 학습을 시작하면 통계가 표시됩니다.</p>
+      </div>
+    )
+  }
 
   return (
     <div>
-      <h2>통계</h2>
-      <div className="row" style={{ marginBottom: 16 }}>
-        <div className="card" style={{ flex: 1 }}><strong>총 카드</strong><div style={{ fontSize: 24 }}>{cards.length}</div></div>
-        <div className="card" style={{ flex: 1 }}><strong>덱</strong><div style={{ fontSize: 24 }}>{decks.length}</div></div>
-        <div className="card" style={{ flex: 1 }}><strong>연속일</strong><div style={{ fontSize: 24 }}>{streak}</div></div>
+      <h2 style={{ marginTop: 0 }}>통계</h2>
+      <div className="stat-grid" style={{ marginBottom: 16 }}>
+        <div className="stat-card"><strong>총 카드</strong><div className="value">{cards.length}</div></div>
+        <div className="stat-card"><strong>덱</strong><div className="value">{decks.length}</div></div>
+        <div className="stat-card"><strong>연속일</strong><div className="value">{streak}</div></div>
+        <div className="stat-card"><strong>오늘 학습</strong><div className="value">{daily.length ? daily[daily.length - 1].count : 0}</div></div>
       </div>
-      <div className="card">
-        <h3>덱별 카드 수</h3>
+      <section className="card">
+        <h3 style={{ marginTop: 0 }}>덱별 카드 수</h3>
         <ResponsiveContainer width="100%" height={240}>
           <BarChart data={deckData}>
-            <XAxis dataKey="name" stroke="#94a3b8" />
-            <YAxis stroke="#94a3b8" />
-            <Tooltip />
-            <Bar dataKey="cards" fill="#38bdf8" />
+            <XAxis dataKey="name" stroke="var(--muted)" tick={{ fill: 'var(--muted)', fontSize: 12 }} />
+            <YAxis stroke="var(--muted)" tick={{ fill: 'var(--muted)', fontSize: 12 }} allowDecimals={false} />
+            <Tooltip contentStyle={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+            <Bar dataKey="cards" fill="var(--accent)" radius={[6, 6, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
-      </div>
-      <div className="card">
-        <h3>숙련도</h3>
+      </section>
+      <section className="card">
+        <h3 style={{ marginTop: 0 }}>숙련도</h3>
         <ResponsiveContainer width="100%" height={240}>
           <PieChart>
-            <Pie data={proficiency} dataKey="value" nameKey="name" outerRadius={80} label>
+            <Pie data={proficiency} dataKey="value" nameKey="name" outerRadius={80} label={{ fill: 'var(--text)', fontSize: 12 }}>
               {proficiency.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
             </Pie>
-            <Tooltip />
+            <Tooltip contentStyle={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--text)' }} />
           </PieChart>
         </ResponsiveContainer>
-      </div>
-      <div className="card">
-        <h3>일별 학습량</h3>
-        <ResponsiveContainer width="100%" height={240}>
-          <BarChart data={daily}>
-            <XAxis dataKey="date" stroke="#94a3b8" />
-            <YAxis stroke="#94a3b8" />
-            <Tooltip />
-            <Bar dataKey="count" fill="#22c55e" />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+      </section>
+      <section className="card">
+        <h3 style={{ marginTop: 0 }}>일별 학습량</h3>
+        {daily.length === 0 ? (
+          <p className="small">아직 학습 기록이 없습니다.</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={daily}>
+              <XAxis dataKey="date" stroke="var(--muted)" tick={{ fill: 'var(--muted)', fontSize: 11 }} />
+              <YAxis stroke="var(--muted)" tick={{ fill: 'var(--muted)', fontSize: 12 }} allowDecimals={false} />
+              <Tooltip contentStyle={{ background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--text)' }} />
+              <Bar dataKey="count" fill="var(--good)" radius={[6, 6, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </section>
     </div>
   )
 }

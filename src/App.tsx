@@ -15,19 +15,23 @@ export default function App() {
   useEffect(() => {
     document.documentElement.dataset.theme = settings?.theme ?? 'dark'
   }, [settings?.theme])
-  if (loading) return <div className="app">Loading...</div>
+  if (loading) return (
+    <div className="app" role="status" aria-live="polite">
+      <div className="card" style={{ textAlign: 'center' }}>불러오는 중…</div>
+    </div>
+  )
   return (
     <BrowserRouter>
       <div className="app">
         <Nav />
-        <main>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/deck/:id" element={<DeckPage />} />
-          <Route path="/study/:deckId" element={<Study />} />
-          <Route path="/stats" element={<Stats />} />
-          <Route path="/settings" element={<SettingsPage />} />
-        </Routes>
+        <main id="main">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/deck/:id" element={<DeckPage />} />
+            <Route path="/study/:deckId" element={<Study />} />
+            <Route path="/stats" element={<Stats />} />
+            <Route path="/settings" element={<SettingsPage />} />
+          </Routes>
         </main>
       </div>
     </BrowserRouter>
@@ -36,10 +40,10 @@ export default function App() {
 
 function Nav() {
   return (
-    <nav className="nav">
-      <NavLink to="/" className={({ isActive }) => (isActive ? 'active' : '')}><button>홈</button></NavLink>
-      <NavLink to="/stats" className={({ isActive }) => (isActive ? 'active' : '')}><button>통계</button></NavLink>
-      <NavLink to="/settings" className={({ isActive }) => (isActive ? 'active' : '')}><button>설정</button></NavLink>
+    <nav className="nav" aria-label="주요 메뉴">
+      <NavLink to="/" end className={({ isActive }) => (isActive ? 'active' : '')}>홈</NavLink>
+      <NavLink to="/stats" className={({ isActive }) => (isActive ? 'active' : '')}>통계</NavLink>
+      <NavLink to="/settings" className={({ isActive }) => (isActive ? 'active' : '')}>설정</NavLink>
     </nav>
   )
 }

@@ -29,6 +29,7 @@ export default function Study() {
   const [correct, setCorrect] = useState<boolean | null>(null)
   const [history, setHistory] = useState<{ cardId: string; prev: any; rating: keyof Counts }[]>([])
   const [counts, setCounts] = useState<Counts>({ again: 0, hard: 0, good: 0, easy: 0 })
+  const [announcement, setAnnouncement] = useState('')
 
   useEffect(() => {
     const now = Date.now()
@@ -47,6 +48,7 @@ export default function Study() {
     setFlipped(false)
     setHistory([])
     setCounts({ again: 0, hard: 0, good: 0, easy: 0 })
+    setAnnouncement(ids.length ? `${ids.length}장 학습 시작` : '복습할 카드가 없습니다')
   }, [deckId, shuffle, allMode, settings?.dailyGoal])
 
   const current = queue[idx] ? cards.find((c) => c.id === queue[idx]) : undefined
@@ -57,8 +59,12 @@ export default function Study() {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && current?.type === 'basic') { e.preventDefault(); setFlipped((f) => !f) }
-      if (flipped && current) {
+      if (!current) return
+      if (e.code === 'Space' && current.type === 'basic') { e.preventDefault(); setFlipped((f) => !f) }
+      if (flipped && current && !graded) {
+        // rating shortcuts only after flip for basic
+      }
+      if ((flipped || graded) && current) {
         if (e.key === '1') rate('again')
         if (e.key === '2') rate('hard')
         if (e.key === '3') rate('good')
@@ -67,7 +73,7 @@ export default function Study() {
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [flipped, current])
+  }, [flipped, graded, current])
 
   const grade = () => {
     if (!current) return
@@ -75,6 +81,7 @@ export default function Study() {
     setCorrect(ok)
     setGraded(true)
     setFlipped(true)
+    setAnnouncement(ok ? '정답' : '오답')
     if (ok) speak('Correct', deck?.lang, settings?.voice)
   }
 
@@ -90,6 +97,7 @@ export default function Study() {
     setCorrect(null)
     setAnswer('')
     setIdx((i) => i + 1)
+    setAnnouncement(`${r} 평가`)
   }
 
   const undo = async () => {
@@ -104,49 +112,70 @@ export default function Study() {
     setGraded(false)
     setCorrect(null)
     setAnswer('')
+    setAnnouncement('실행 취소')
   }
 
   const normalize = (s: string) => s.trim().toLowerCase()
 
   if (!deck) return null
   if (queue.length === 0) return (
-    <div className="empty">
+    <div className="empty card">
       <h2>복습할 카드가 없습니다</h2>
+      <p className="small">새 카드를 추가하거나 ‘전체 복습’을 켜보세요.</p>
       <button className="btn" onClick={() => navigate(`/deck/${deckId}`)}>덱으로</button>
     </div>
   )
   if (idx >= queue.length) return (
-    <div className="empty">
+    <div className="empty card" aria-live="polite">
       <h2>완료! {done}장 학습</h2>
       <div className="card" style={{ maxWidth: 360, margin: '12px auto' }}>
         <p>Again {counts.again} · Hard {counts.hard} · Good {counts.good} · Easy {counts.easy}</p>
       </div>
-      <button className="btn" onClick={() => navigate(`/deck/${deckId}`)}>덱으로</button>
+      <div className="row" style={{ justifyContent: 'center' }}>
+        <button className="btn" onClick={() => navigate(`/deck/${deckId}`)}>덱으로</button>
+        <button className="btn secondary" onClick={() => { setAllMode((v) => !v) }}>전체 복습</button>
+      </div>
     </div>
   )
   if (!current) return null
 
   const isGradedType = current.type && current.type !== 'basic'
+  const progress = queue.length ? Math.round((idx / queue.length) * 100) : 0
 
   return (
     <div>
       <div className="row" style={{ justifyContent: 'space-between' }}>
         <button className="btn secondary" onClick={() => navigate(`/deck/${deckId}`)}>뒤로</button>
-        <span className="small">{idx + 1} / {queue.length}</span>
+        <span className="small" aria-live="polite">{idx + 1} / {queue.length}</span>
       </div>
-      <div className="row" style={{ marginBottom: 8 }}>
+
+      <div className="progress" style={{ margin: '8px 0 12px' }} aria-hidden="true">
+        <span style={{ width: `${progress}%` }} />
+      </div>
+
+      <div className="row" style={{ marginBottom: 8, flexWrap: 'wrap' }}>
         <label className="small"><input type="checkbox" checked={shuffle} onChange={(e) => setShuffle(e.target.checked)} /> 셔플</label>
         <label className="small"><input type="checkbox" checked={allMode} onChange={(e) => setAllMode(e.target.checked)} /> 전체 복습</label>
         <button className="btn secondary" onClick={undo} disabled={history.length === 0}>Undo</button>
+        <span className="sr-only" aria-live="polite">{announcement}</span>
       </div>
-      <div className="flashcard" style={{ marginTop: 16 }} role="button" aria-label="플래시카드" onClick={() => current.type === 'basic' && setFlipped((f) => !f)}
+
+      <div
+        className="flashcard"
+        style={{ marginTop: 16 }}
+        role="button"
+        tabIndex={0}
+        aria-label="플래시카드"
+        onClick={() => current.type === 'basic' && setFlipped((f) => !f)}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (current.type === 'basic') setFlipped((f) => !f) } }}
         onTouchStart={(e) => setTouchStart(e.touches[0].clientX)}
         onTouchEnd={(e) => {
           if (touchStart === null) return
           const dx = e.changedTouches[0].clientX - touchStart
           if (Math.abs(dx) > 50) setFlipped((f) => !f)
           setTouchStart(null)
-        }}>
+        }}
+      >
         <div className={`flashcard-inner ${flipped ? 'flipped' : ''}`}>
           <div className="flashcard-face">
             {current.type === 'cloze' ? current.front.replace(/\{\{.*?\}\}/g, '_____') : current.front}
@@ -155,37 +184,57 @@ export default function Study() {
                 {current.type === 'mcq' ? (
                   <div className="row" style={{ justifyContent: 'center' }}>
                     {(current.choices ?? []).map((ch, i) => (
-                      <button key={i} className="btn secondary" onClick={() => { setAnswer(ch); }}>{ch}</button>
+                      <button
+                        key={i}
+                        className="btn secondary"
+                        onClick={(e) => { e.stopPropagation(); setAnswer(ch) }}
+                        aria-pressed={answer === ch}
+                      >
+                        {ch}
+                      </button>
                     ))}
                   </div>
                 ) : (
-                  <input className="input" value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="답 입력" />
+                  <input
+                    className="input"
+                    value={answer}
+                    onChange={(e) => setAnswer(e.target.value)}
+                    placeholder="답 입력"
+                    aria-label="답 입력"
+                    onKeyDown={(e) => { if (e.key === 'Enter') grade() }}
+                  />
                 )}
-                <button className="btn" style={{ marginTop: 8 }} onClick={grade}>제출</button>
+                <button className="btn" style={{ marginTop: 8 }} onClick={(e) => { e.stopPropagation(); grade() }} disabled={current.type !== 'mcq' && !answer.trim()}>제출</button>
                 {answer && current.type === 'mcq' && <p className="small">선택: {answer}</p>}
               </div>
             )}
           </div>
           <div className="flashcard-face flashcard-back">
             {current.back}
-            {graded && correct !== null && <p className="small">{correct ? '정답!' : '오답'}</p>}
-            {current.image && <img src={current.image} alt="" style={{ maxHeight: 120, marginTop: 8 }} />}
+            {graded && correct !== null && (
+              <p className="small" style={{ color: correct ? 'var(--good)' : 'var(--again)', fontWeight: 700 }}>
+                {correct ? '정답!' : '오답'}
+              </p>
+            )}
+            {current.image && <img src={current.image} alt="" style={{ maxHeight: 120, marginTop: 8, borderRadius: 8 }} />}
           </div>
         </div>
       </div>
+
       <div className="row" style={{ marginTop: 12, justifyContent: 'center' }}>
         <button className="btn secondary" onClick={() => speak(current.front, deck.lang, settings?.voice)}>🔊 앞</button>
         <button className="btn secondary" onClick={() => speak(current.back, deck.lang, settings?.voice)}>🔊 뒤</button>
       </div>
+
       {(flipped || graded) && (
-        <div className="rating-row">
+        <div className="rating-row" role="group" aria-label="숙련도 평가">
           <button className="r-again" onClick={() => rate('again')}>Again</button>
           <button className="r-hard" onClick={() => rate('hard')}>Hard</button>
           <button className="r-good" onClick={() => rate('good')}>Good</button>
           <button className="r-easy" onClick={() => rate('easy')}>Easy</button>
         </div>
       )}
-      {!flipped && !graded && current.type === 'basic' && <p className="small" style={{ textAlign: 'center', marginTop: 12 }}>카드를 탭해 뒤집기</p>}
+      {!flipped && !graded && current.type === 'basic' && <p className="small" style={{ textAlign: 'center', marginTop: 12 }}>카드를 탭해 뒤집기 · 스페이스바로 뒤집기</p>}
     </div>
   )
 }

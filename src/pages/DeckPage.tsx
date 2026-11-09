@@ -41,6 +41,7 @@ export default function DeckPage() {
   const [editFront, setEditFront] = useState('')
   const [editBack, setEditBack] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
+  const imageInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => { if (!deck) navigate('/') }, [deck, navigate])
 
@@ -55,6 +56,7 @@ export default function DeckPage() {
     if (!front.trim() || !back.trim()) return
     await addCard(deckId, front.trim(), back.trim(), tags.split(',').map((t) => t.trim()).filter(Boolean), image, type, choices.split('\n').map((c) => c.trim()).filter(Boolean))
     setFront(''); setBack(''); setTags(''); setImage(undefined); setType('basic'); setChoices('')
+    if (imageInputRef.current) imageInputRef.current.value = ''
   }
 
   const startEdit = (c: any) => {
@@ -107,66 +109,111 @@ export default function DeckPage() {
   if (!deck) return null
   return (
     <div>
-      <div className="row" style={{ justifyContent: 'space-between', marginBottom: 8 }}>
-        <h2>{deck.name}</h2>
-        <div className="row">
+      <div className="row" style={{ justifyContent: 'space-between', marginBottom: 8, gap: 8 }}>
+        <h2 style={{ margin: 0 }}>{deck.name}</h2>
+        <div className="row" style={{ flexWrap: 'wrap' }}>
           <button className="btn" onClick={() => navigate(`/study/${deckId}`)}>학습</button>
           <button className="btn secondary" onClick={handleShare}>공유</button>
           <button className="btn secondary" onClick={() => {
             const n = prompt('덱 이름', deck.name)
             if (n) renameDeck(deckId, n)
           }}>이름변경</button>
-          <button className="btn danger" onClick={() => { if (confirm('덱 삭제?')) { deleteDeck(deckId); navigate('/') } }}>삭제</button>
+          <button className="btn danger" onClick={() => { if (confirm('덱을 삭제할까요?')) { deleteDeck(deckId); navigate('/') } }}>삭제</button>
         </div>
       </div>
 
-      <div className="card">
-        <h3>카드 추가</h3>
-        <input className="input" placeholder="앞 (질문)" value={front} onChange={(e) => setFront(e.target.value)} />
-        <textarea className="input" style={{ marginTop: 8 }} placeholder="뒤 (답)" value={back} onChange={(e) => setBack(e.target.value)} />
-        <input className="input" style={{ marginTop: 8 }} placeholder="태그 (쉼표)" value={tags} onChange={(e) => setTags(e.target.value)} />
-        <select className="input" style={{ marginTop: 8 }} value={type} onChange={(e) => setType(e.target.value)}>
-          <option value="basic">기본</option>
-          <option value="input">입력형</option>
-          <option value="mcq">객관식</option>
-          <option value="cloze">클로즈</option>
-        </select>
-        {type === 'mcq' && <textarea className="input" style={{ marginTop: 8 }} placeholder="선택지 (줄바꿈)" value={choices} onChange={(e) => setChoices(e.target.value)} />}
+      <section className="card" aria-labelledby="add-card-title">
+        <h3 id="add-card-title" style={{ marginTop: 0 }}>카드 추가</h3>
+        <div className="field">
+          <label htmlFor="card-front">앞 (질문)</label>
+          <input id="card-front" className="input" placeholder="앞 (질문)" aria-label="앞 (질문)" value={front} onChange={(e) => setFront(e.target.value)} />
+        </div>
+        <div className="field" style={{ marginTop: 8 }}>
+          <label htmlFor="card-back">뒤 (답)</label>
+          <textarea id="card-back" className="input" placeholder="뒤 (답)" aria-label="뒤 (답)" value={back} onChange={(e) => setBack(e.target.value)} />
+        </div>
+        <div className="field" style={{ marginTop: 8 }}>
+          <label htmlFor="card-tags">태그 (쉼표)</label>
+          <input id="card-tags" className="input" placeholder="태그 (쉼표)" aria-label="태그 (쉼표)" value={tags} onChange={(e) => setTags(e.target.value)} />
+        </div>
+        <div className="field" style={{ marginTop: 8 }}>
+          <label htmlFor="card-type">유형</label>
+          <select id="card-type" className="input" aria-label="유형" value={type} onChange={(e) => setType(e.target.value)}>
+            <option value="basic">기본</option>
+            <option value="input">입력형</option>
+            <option value="mcq">객관식</option>
+            <option value="cloze">클로즈</option>
+          </select>
+        </div>
+        {type === 'mcq' && (
+          <div className="field" style={{ marginTop: 8 }}>
+            <label htmlFor="card-choices">선택지 (줄바꿈)</label>
+            <textarea id="card-choices" className="input" placeholder="선택지 (줄바꿈)" aria-label="선택지 (줄바꿈)" value={choices} onChange={(e) => setChoices(e.target.value)} />
+          </div>
+        )}
         <div className="row" style={{ marginTop: 8 }}>
-          <input type="file" accept="image/*" onChange={(e) => onImage(e.target.files?.[0])} />
-          {image && <img src={image} alt="" style={{ height: 40 }} />}
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            aria-label="이미지 첨부"
+            onChange={(e) => onImage(e.target.files?.[0])}
+          />
+          {image && (
+            <>
+              <img src={image} alt="첨부 미리보기" style={{ height: 40, borderRadius: 6 }} />
+              <button className="btn ghost" onClick={() => { setImage(undefined); if (imageInputRef.current) imageInputRef.current.value = '' }}>제거</button>
+            </>
+          )}
         </div>
-        <button className="btn" style={{ marginTop: 8 }} onClick={submit}>추가</button>
-      </div>
+        <button className="btn" style={{ marginTop: 12 }} onClick={submit} disabled={!front.trim() || !back.trim()}>추가</button>
+      </section>
 
-      <div className="card">
+      <section className="card" aria-labelledby="io-title">
         <div className="row" style={{ justifyContent: 'space-between' }}>
-          <h3>가져오기/내보내기</h3>
+          <h3 id="io-title" style={{ margin: 0 }}>가져오기/내보내기</h3>
           <div className="row">
-            <input ref={fileRef} type="file" accept=".csv,.json" onChange={handleImport} />
+            <input ref={fileRef} type="file" accept=".csv,.json" aria-label="가져올 파일" onChange={handleImport} />
             <button className="btn secondary" onClick={() => handleExport('csv')}>CSV</button>
             <button className="btn secondary" onClick={() => handleExport('json')}>JSON</button>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="card">
+      <section className="card" aria-labelledby="filter-title">
         <div className="row">
-          <input className="input" placeholder="검색 (앞/뒤/태그)" value={query} onChange={(e) => setQuery(e.target.value)} />
-          <select className="input" value={tagFilter} onChange={(e) => setTagFilter(e.target.value)}>
+          <label className="sr-only" htmlFor="card-search">검색</label>
+          <input id="card-search" className="input" placeholder="검색 (앞/뒤/태그)" aria-label="검색 (앞/뒤/태그)" value={query} onChange={(e) => setQuery(e.target.value)} />
+          <label className="sr-only" htmlFor="tag-filter">태그 필터</label>
+          <select id="tag-filter" className="input" aria-label="태그 필터" value={tagFilter} onChange={(e) => setTagFilter(e.target.value)}>
             <option value="">모든 태그</option>
             {allTags.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>
-      </div>
-      {qr && <div className="card"><img src={qr} alt="QR" style={{ maxWidth: 200 }} /></div>}
+      </section>
+
+      {qr && (
+        <section className="card">
+          <img src={qr} alt="덱 공유 QR 코드" style={{ maxWidth: 200 }} />
+        </section>
+      )}
+
       <h3>카드 ({deckCards.length})</h3>
+      {deckCards.length === 0 && (
+        <div className="empty">카드가 없습니다. 위에서 추가해보세요.</div>
+      )}
       {deckCards.map((c) => (
-        <div key={c.id} className="card">
+        <article key={c.id} className="card">
           {editing === c.id ? (
             <>
-              <input className="input" value={editFront} onChange={(e) => setEditFront(e.target.value)} />
-              <textarea className="input" style={{ marginTop: 8 }} value={editBack} onChange={(e) => setEditBack(e.target.value)} />
+              <div className="field">
+                <label htmlFor={`edit-front-${c.id}`}>앞 (질문)</label>
+                <input id={`edit-front-${c.id}`} className="input" aria-label="앞 (질문)" value={editFront} onChange={(e) => setEditFront(e.target.value)} />
+              </div>
+              <div className="field" style={{ marginTop: 8 }}>
+                <label htmlFor={`edit-back-${c.id}`}>뒤 (답)</label>
+                <textarea id={`edit-back-${c.id}`} className="input" aria-label="뒤 (답)" value={editBack} onChange={(e) => setEditBack(e.target.value)} />
+              </div>
               <div className="row" style={{ marginTop: 8 }}>
                 <button className="btn" onClick={() => saveEdit(c)}>저장</button>
                 <button className="btn secondary" onClick={() => setEditing(null)}>취소</button>
@@ -177,14 +224,15 @@ export default function DeckPage() {
               <div><strong>{c.front}</strong></div>
               <div className="small">{c.back}</div>
               {c.tags.length > 0 && <div className="small">#{c.tags.join(' #')}</div>}
-              {c.image && <img src={c.image} alt="" style={{ height: 60, marginTop: 4 }} />}
+              {c.image && <img src={c.image} alt="" style={{ height: 60, marginTop: 4, borderRadius: 6 }} />}
+              {c.type !== 'basic' && <div className="small" style={{ marginTop: 4 }}>유형: {c.type}</div>}
               <div className="row" style={{ marginTop: 8 }}>
                 <button className="btn secondary" onClick={() => startEdit(c)}>편집</button>
-                <button className="btn danger" onClick={() => deleteCard(c.id)}>삭제</button>
+                <button className="btn danger" onClick={() => { if (confirm('카드를 삭제할까요?')) deleteCard(c.id) }}>삭제</button>
               </div>
             </>
           )}
-        </div>
+        </article>
       ))}
     </div>
   )
